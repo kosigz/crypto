@@ -33,6 +33,7 @@ class MerkleTree:
 
     def create_tree(self, file_list):
         self.file_list = file_list
+        self.file_list.sort()
 
         hashes = []
         for i, f in enumerate(file_list):
@@ -90,7 +91,7 @@ class MerkleTree:
                 computed_hash = self._sha256(twin + computed_hash)
             else:
                 computed_hash = self._sha256(computed_hash + twin)
-            
+
             siblings_list = siblings_list[1:]
 
         return computed_hash == self.root.hash

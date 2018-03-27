@@ -110,15 +110,16 @@ class RSA:
         return x % m
 
 # test RSA, do it 10 times
-rsa = RSA()
-num = 50
-print 'Finished initializing RSA.'
+if len(sys.argv) > 1 and sys.argv[1] == '1.2':
+    rsa = RSA()
+    num = 50
+    print 'Finished initializing RSA.'
 
-for i in xrange(num):
-    M = random.randint(2**1023, 2**1024)
-    c = rsa.trapdoor(M)
-    assert c != M
-    dM = rsa.inverse(c)
-    assert dM == M
+    for i in xrange(num):
+        M = random.randint(2**1023, 2**1024)
+        c = rsa.trapdoor(M)
+        assert c != M
+        dM = rsa.inverse(c)
+        assert dM == M
 
-print 'Successfully inverted {} messages.'.format(num)
+    print 'Successfully inverted {} messages.'.format(num)
