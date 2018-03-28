@@ -8,4 +8,6 @@ Usage instructions:
 
 `python rsa.py 1.2` -- tests RSA implementation
 
+`python rsa.py 1.3` -- tests ISO_RSA implementation, extra credit
+
 `python merkel.py 2.2` -- tests MerkelTree implementation

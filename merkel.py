@@ -33,7 +33,6 @@ class MerkleTree:
 
     def create_tree(self, file_list):
         self.file_list = file_list
-        self.file_list.sort()
 
         hashes = []
         for i, f in enumerate(file_list):
@@ -120,7 +119,7 @@ if len(sys.argv) > 1 and sys.argv[1] == '2.1':
         assert not valid
 
     # write 10 files
-    for i in range(1):
+    for i in range(10):
         pos = random.randint(0, 31)
         new_file = random.randint(0, 1000)
         file_list[pos] = new_file

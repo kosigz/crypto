@@ -2,6 +2,9 @@
 import random
 import math
 import sys
+import hashlib
+import os
+from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 
 ############## Problem 1 a ##############
 # Generate prime number of size n bits
@@ -52,6 +55,29 @@ def isPrimeNaive(p):
 			return False
 	return True
 
+# More util functions
+# Some internet code for modular inverse.
+def _modularInverse(a, m):
+    def _extended_gcd(aa, bb):
+        lastremainder, remainder = abs(aa), abs(bb)
+        x, lastx, y, lasty = 0, 1, 1, 0
+        while remainder:
+            lastremainder, (quotient, remainder) = remainder, divmod(lastremainder, remainder)
+            x, lastx = lastx - quotient * x, x
+            y, lasty = lasty - quotient * y, y
+        return lastremainder, lastx * (-1 if aa < 0 else 1), lasty * (-1 if bb < 0 else 1)
+    g, x, y = _extended_gcd(a, m)
+    if g != 1:
+        raise ValueError
+    return x % m
+
+def _sha256(s, l=None):
+    m = hashlib.sha256()
+    m.update(str(s))
+    result = m.hexdigest()
+    if l:
+        result = result[:l]
+    return result
 
 #test for 10 small numbers, size n = 20 bits.
 if len(sys.argv) > 1 and sys.argv[1] == '1.1':
@@ -86,28 +112,13 @@ class RSA:
         self.e = generatePrime(self.n * 2, maxValue = self.totient_N)
 
 		# Secret key d
-        self.d = self._modularInverse(self.e, self.totient_N)
+        self.d = _modularInverse(self.e, self.totient_N)
 
     def trapdoor(self, M):
         return pow(M, self.e, self.N)
 
     def inverse(self, ciphertext):
         return pow(ciphertext, self.d, self.N)
-
-    # Some internet code for modular inverse.
-    def _modularInverse(self, a, m):
-        def _extended_gcd(aa, bb):
-            lastremainder, remainder = abs(aa), abs(bb)
-            x, lastx, y, lasty = 0, 1, 1, 0
-            while remainder:
-                lastremainder, (quotient, remainder) = remainder, divmod(lastremainder, remainder)
-                x, lastx = lastx - quotient * x, x
-                y, lasty = lasty - quotient * y, y
-            return lastremainder, lastx * (-1 if aa < 0 else 1), lasty * (-1 if bb < 0 else 1)
-        g, x, y = _extended_gcd(a, m)
-        if g != 1:
-            raise ValueError
-        return x % m
 
 # test RSA, do it 10 times
 if len(sys.argv) > 1 and sys.argv[1] == '1.2':
@@ -123,3 +134,41 @@ if len(sys.argv) > 1 and sys.argv[1] == '1.2':
         assert dM == M
 
     print 'Successfully inverted {} messages.'.format(num)
+
+############## Problem 1 c ##############
+class ISO_RSA:
+    # initialize RSA, generate e, d, ISO RSA implementation
+    def __init__(self):
+        pass
+
+    def gen(self):
+        # security parameter for sauthenticated encryption
+        self.k = 128
+        self.rsa = RSA()
+        self.chachaNonceLength = 12
+        self.chacha = ChaCha20Poly1305(ChaCha20Poly1305.generate_key())
+
+    def enc(self, M):
+        x = random.randint(0, 2**1024)
+        y = self.rsa.trapdoor(x)
+        k = _sha256(x, l=self.chachaNonceLength)
+        c = self.chacha.encrypt(k, M, None)
+        return (y, k, c)
+
+    def dec(self, y, k, c):
+        x = self.rsa.inverse(y)
+        k = _sha256(x, l=self.chachaNonceLength)
+        M = self.chacha.decrypt(k, c, None) # you should use k here
+        return M
+
+# test ISO_RSA, do it 10 times
+if len(sys.argv) > 1 and sys.argv[1] == '1.3':
+    trials = 10
+    rsaISO = ISO_RSA()
+    rsaISO.gen()
+    for i in range(trials):
+        M = os.urandom(50)
+        y, x, c = rsaISO.enc(M)
+        dM = rsaISO.dec(y, x, c)
+        assert dM == M
+    print 'Validated ISO_RSA with {} trials.'.format(trials)
