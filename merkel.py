@@ -3,6 +3,8 @@ import random
 import hashlib
 
 ############## Problem 2 ##############
+
+
 class LeafNode:
     def __init__(self, path, hash, file):
         self.path = path
@@ -11,6 +13,7 @@ class LeafNode:
 
     def __str__(self):
         return "node={}, hash={}, file={}".format(self.path, self.hash, self.file)
+
 
 class HashNode:
     def __init__(self, path, hash, left, right):
@@ -21,6 +24,7 @@ class HashNode:
 
     def __str__(self):
         return "path={}, hash={}".format(self.path, self.hash)
+
 
 class MerkleTree:
     def __init__(self):
@@ -43,8 +47,9 @@ class MerkleTree:
             next_hashes = []
             for i in range(0, len(hashes), 2):
                 A = hashes[i]
-                B = hashes[i+1]
-                next_hash = HashNode(A.path + B.path, self._sha256(A.hash + B.hash), A, B)
+                B = hashes[i + 1]
+                next_hash = HashNode(
+                    A.path + B.path, self._sha256(A.hash + B.hash), A, B)
                 next_hashes.append(next_hash)
             hashes = next_hashes
 
@@ -95,32 +100,33 @@ class MerkleTree:
 
         return computed_hash == self.root.hash
 
+
 # some code to validate the functionality of our MerkleTree
 if len(sys.argv) > 1 and sys.argv[1] == '2.1':
     mt = MerkleTree()
-    mt.n = 32
+    mt.n = 2**10
 
     file_list = [i * 30 for i in range(mt.n)]
     root = mt.create_tree(file_list)
 
     # read 10 valid files
     for i in range(10):
-        pos = random.randint(0, 31)
-        file, siblings_list =  mt.read_file(pos)
+        pos = random.randint(0, mt.n - 1)
+        file, siblings_list = mt.read_file(pos)
         valid = mt.check_integrity(pos, file, siblings_list)
         assert file == file_list[pos] and valid
 
     # read 10 invalid files
     for i in range(10):
-        pos = random.randint(0, 31)
-        file, siblings_list =  mt.read_file(pos)
+        pos = random.randint(0, mt.n - 1)
+        file, siblings_list = mt.read_file(pos)
         file = random.randint(0, 1000)
         valid = mt.check_integrity(pos, file, siblings_list)
         assert not valid
 
     # write 10 files
     for i in range(10):
-        pos = random.randint(0, 31)
+        pos = random.randint(0, mt.n - 1)
         new_file = random.randint(0, 1000)
         file_list[pos] = new_file
         mt.write_file(pos, new_file)
@@ -128,17 +134,17 @@ if len(sys.argv) > 1 and sys.argv[1] == '2.1':
     # Now run our experiment one more time.
     # read 10 valid files
     for i in range(10):
-        pos = random.randint(0, 31)
+        pos = random.randint(0, mt.n - 1)
         file, siblings_list = mt.read_file(pos)
         valid = mt.check_integrity(pos, file, siblings_list)
         assert file == file_list[pos] and valid
 
     # read 10 invalid files
     for i in range(10):
-        pos = random.randint(0, 31)
-        file, siblings_list =  mt.read_file(pos)
+        pos = random.randint(0, mt.n - 1)
+        file, siblings_list = mt.read_file(pos)
         file = random.randint(0, 1000)
-        valid = mt.check_integrity(pos,file,siblings_list)
+        valid = mt.check_integrity(pos, file, siblings_list)
         assert not valid
 
     print 'All MerkleTree tests successful.'

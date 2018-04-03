@@ -6,11 +6,12 @@ import hashlib
 import os
 from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 
+
 ############## Problem 1 a ##############
 # Generate prime number of size n bits
 def generatePrime(n, maxValue=float("inf")):
-	# sample uniform number of n bits
-	# use isPrimeMR() to test that the generated number is prime
+        # sample uniform number of n bits
+        # use isPrimeMR() to test that the generated number is prime
     iters = 10 * 3 * n
     for i in xrange(iters):
         r = random.randint(0, min(2**n, maxValue))
@@ -18,16 +19,25 @@ def generatePrime(n, maxValue=float("inf")):
             return r
     raise 'Did not generate a prime in {} iterations.'.format(iters)
 
-#get number p, test if it's prime using Miller-Rabin
+
+# primality test using the naive approach
+def isPrimeNaive(p):
+    for i in xrange(2, int(math.sqrt(p)) + 2):
+        if p % i == 0:
+            return False
+    return True
+
+
+# get number p, test if it's prime using Miller-Rabin
 def isPrimeMR(N, t=30):
     def _compositeCheck(a, r, u, N):
         x = pow(a, u, N)
         if x == 1 or x == N - 1:
             return True
         for i in xrange(r):
+            x = pow(x, 2, N)
             if x == N - 1:
                 return True
-            x = pow(x, 2, N)
         return x == N - 1
     # ---------------------------------------------
     if N == 2:
@@ -42,18 +52,12 @@ def isPrimeMR(N, t=30):
             u /= 2
             r += 1
         # and run our t iterations
-    	for i in xrange(t):
-    		a = random.randint(1, N - 1)
-    		if not _compositeCheck(a, r, u, N):
-    			return False
+        for i in xrange(t):
+            a = random.randint(1, N - 1)
+            if not _compositeCheck(a, r, u, N):
+                return False
         return True
 
-# primality test using the naive approach
-def isPrimeNaive(p):
-	for i in xrange(2, int(math.sqrt(p))+2):
-		if p % i == 0:
-			return False
-	return True
 
 # More util functions
 # Some internet code for modular inverse.
@@ -62,7 +66,8 @@ def _modularInverse(a, m):
         lastremainder, remainder = abs(aa), abs(bb)
         x, lastx, y, lasty = 0, 1, 1, 0
         while remainder:
-            lastremainder, (quotient, remainder) = remainder, divmod(lastremainder, remainder)
+            lastremainder, (quotient, remainder) = remainder, divmod(
+                lastremainder, remainder)
             x, lastx = lastx - quotient * x, x
             y, lasty = lasty - quotient * y, y
         return lastremainder, lastx * (-1 if aa < 0 else 1), lasty * (-1 if bb < 0 else 1)
@@ -70,6 +75,7 @@ def _modularInverse(a, m):
     if g != 1:
         raise ValueError
     return x % m
+
 
 def _sha256(s, l=None):
     m = hashlib.sha256()
@@ -79,7 +85,8 @@ def _sha256(s, l=None):
         result = result[:l]
     return result
 
-#test for 10 small numbers, size n = 20 bits.
+
+# test for 10 small numbers, size n = 20 bits.
 if len(sys.argv) > 1 and sys.argv[1] == '1.1':
     size = 20
     numPrimes = 10
@@ -95,23 +102,23 @@ class RSA:
     def __init__(self):
         self.gen()
 
-	# Use generate_prime
+        # Use generate_prime
     def gen(self):
-		# security parameter
+        # security parameter
         self.n = 1024
 
-		# Primes p and q
+        # Primes p and q
         self.p = generatePrime(self.n)
         self.q = generatePrime(self.n)
 
-		# RSA modulus N = pq, totient_N = (p-1)(q-1)
+        # RSA modulus N = pq, totient_N = (p-1)(q-1)
         self.N = self.p * self.q
         self.totient_N = (self.p - 1) * (self.q - 1)
 
-		# Public key e
-        self.e = generatePrime(self.n * 2, maxValue = self.totient_N)
+        # Public key e
+        self.e = generatePrime(self.n * 2, maxValue=self.totient_N)
 
-		# Secret key d
+        # Secret key d
         self.d = _modularInverse(self.e, self.totient_N)
 
     def trapdoor(self, M):
@@ -119,6 +126,7 @@ class RSA:
 
     def inverse(self, ciphertext):
         return pow(ciphertext, self.d, self.N)
+
 
 # test RSA, do it 10 times
 if len(sys.argv) > 1 and sys.argv[1] == '1.2':
@@ -134,6 +142,7 @@ if len(sys.argv) > 1 and sys.argv[1] == '1.2':
         assert dM == M
 
     print 'Successfully inverted {} messages.'.format(num)
+
 
 ############## Problem 1 c ##############
 class ISO_RSA:
@@ -158,8 +167,9 @@ class ISO_RSA:
     def dec(self, y, k, c):
         x = self.rsa.inverse(y)
         k = _sha256(x, l=self.chachaNonceLength)
-        M = self.chacha.decrypt(k, c, None) # you should use k here
+        M = self.chacha.decrypt(k, c, None)  # you should use k here
         return M
+
 
 # test ISO_RSA, do it 10 times
 if len(sys.argv) > 1 and sys.argv[1] == '1.3':
